@@ -1,4 +1,4 @@
-# Climate Correlations
+# Oceanic Carbon Regimes Detection and Visualization
 
 ## Python Environment
 Conda environment: \
