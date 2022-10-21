@@ -1,0 +1,9 @@
+#ignore the .nc climate models
+*.nc
+*.xlsx
+*.png
+*.csv
+*.pyc
+*.jpg
+*.pkl
+*-checkpoint.ipynb

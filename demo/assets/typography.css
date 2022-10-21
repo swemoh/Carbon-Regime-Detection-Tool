@@ -1,0 +1,15 @@
+body {
+    font-family: sans-serif;
+}
+h1 {
+    color: blue;
+}
+
+h2, h3, h4, h5, h6 {
+    color: black;
+}
+
+/* .button:hover {
+    background-color:#002ead;
+    transition: 0.7s;
+} */
