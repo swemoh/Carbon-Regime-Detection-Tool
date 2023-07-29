@@ -1,0 +1,34 @@
+/* Custom style for the checkboxes */
+.checkbox-label {
+    font-size: 16px;  /* Change this value to adjust the font size for the checkboxes */
+    margin-bottom: 10px;  /* Add some margin at the bottom to separate checkboxes */
+    margin-left: 2px;  /* Add some margin at the bottom to separate checkboxes */
+}
+
+/* Custom style for the button */
+#btn_cluster {
+    font-size: 18px;  /* Change this value to adjust the font size for the button */
+    width: auto;  /* Set the button width to "auto" to avoid covering the checkboxes */
+    padding: 10px 20px;  /* Add padding to the button to increase its size */
+}
+
+/* Custom style for the columns */
+.column {
+    float: left;
+    width: 33.33%;  /* Each column takes one-third of the available width */
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Clear the float to prevent elements from wrapping */
+.row::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+.checkbox-container {
+    display: inline-block;
+    margin-left: 5px; /* Add margin to separate the dropdown and checkbox container */
+    vertical-align: top; /* Align the checkbox container to the top of the row */
+}

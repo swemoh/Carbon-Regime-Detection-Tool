@@ -28,8 +28,6 @@ from build_cluster_map import extract_clusters
 # for static images
 import io
 import base64
-
-
 # -------------------------------------- Dash App ----------------------------------------
 
 app = Dash(__name__) # always pass __name__ -> It is connected with the asset folder.
@@ -53,7 +51,7 @@ LOGO_GEOMAR_PATH = 'assets/geomar-logo.png'
 encoded_LOGO_GEOMAR_PATH = base64.b64encode(open(LOGO_GEOMAR_PATH, 'rb').read())
 
 ## Global CSS
-green_button_style = {"margin": "5px",
+green_button_style = {"margin": "15px",
                       "background-color": "#4CAF50", # /* Green */
                     #   "border": "none",
                       "color": "white",
@@ -67,6 +65,9 @@ green_button_style = {"margin": "5px",
                       'align':'left',
                     #   ".hover": { "color": "pink", "background-color": "red"},
                       }
+
+# Add the CSS stylesheet
+app.css.append_css({"external_url": "styles.css"})
 
 # --------------------------------------- App layout ---------------------------------------
 
@@ -82,8 +83,8 @@ app.layout = html.Div([
     html.Hr(),
     # html.Br(),
     # html.P("Demo Introduction. A paragraph about the tool."),
-    html.H2("Step 1: Select ocean model, required year and month.",),
-    html.H2("Press the button at the right to start grid-based multivariate linear regression between CO2 and its 3 drivers - SST, DIC, and ALK. A dendrogram formed on the outcome of the regression will be displayed below.",),
+    html.H2("Step 1: Select ocean model, required year and month. Step 2: Select required drivers of CO2.",),
+    html.H2("Step 2: Press the button at the bottom to start grid-based multivariate linear regression between CO2 and its drivers."),
 
     html.Div(className="row", children=[
             dcc.Dropdown(id="input_select_ocean_model",
@@ -97,35 +98,209 @@ app.layout = html.Div([
                  ), # first DD ends
             dcc.Dropdown(id="input_select_year",
                 options=[
-                    {"label": "2015", "value": '2015'},
-                    {"label": "2016", "value": '2016'},
-                    {"label": "2017", "value": '2017'},],
+                    {"label": str(year), "value": str(year)} for year in range(2009, 2019)
+                    ],
                  multi=False,
                  value=2015,
                  style={'width': "28%",}
                  ), # first DD ends
             dcc.Dropdown(id="input_select_month",
                  options=[
-                    {"label": "January", "value": 'jan'},
-                    {"label": "February", "value": 'feb'},
-                    {"label": "March", "value": 'mar'},
-                    {"label": "April", "value": 'apr'},
-                    {"label": "May", "value": 'may'},
-                    {"label": "June", "value": 'jun'},
-                    {"label": "July", "value": 'jul'},
-                    {"label": "August", "value": 'aug'},
-                    {"label": "September", "value": 'sep'},
-                    {"label": "October", "value": 'oct'},
-                    {"label": "November", "value": 'nov'},
-                    {"label": "December", "value": 'dec'},],
+                     {"label": month, "value": month[:3].lower()} for month in [
+                    "January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"
+                ]
+                    ],
                  multi=False,
                  value='jan',
                  style={'width': "30%"}
                  ), # second DD ends
-                html.Button('Run analysis.', id='btn_cluster', style= green_button_style),], 
-        style=dict(display='flex',)
-        ),
+                ],style=dict(display='flex')),
     
+    ## Empty container
+    # html.Div(id='empty_container_1', children=[]),
+    ## Horizontal break
+    html.Br(),
+    html.Div(className="row", children=[
+                html.Div(className='column', style={'margin-right': '20px'}, children=[
+                html.H2('Select Drivers'),
+                dcc.Checklist(
+                id='checkboxes_driver',
+                options=[
+                    {'label': 'Sea Surface Temperature', 'value': 'sst'},
+                    {'label': 'Dissolved Inorganic Carbon', 'value': 'dicp'},
+                    {'label': 'Salinity', 'value': 'sal'},
+                    {'label': 'Alkalinity', 'value': 'alk'},
+                    {'label': 'Sea Ice Coverege', 'value': 'seaice'},
+                ],
+                # value=['sst'],  # Set the default selected values
+                labelStyle={'display': 'block'},  # Display each label in a new line
+                className='checkbox-label',  # Apply the custom CSS class for the checkboxes
+                ), # end of checklist
+                dcc.Slider(
+                    id='slider',
+                    min=0,
+                    max=1,
+                    step=0.1,
+                    value=0.5,  # Set the initial value
+                    marks={i/10: str(i/10) for i in range(11)},  # Add marks for each step
+                ),
+            ]),
+
+            html.Div(className='column', children=[
+                html.H2('Select Target'),
+                dcc.Checklist(
+                id='checkboxes_target',
+                options=[
+                    {'label': 'CO2 Natural', 'value': 'fco2_pre'},
+                    {'label': 'CO2 Anthropogenic', 'value': 'fco2'},
+                ],
+                # value=['fco2_pre'],  # Set the default selected values
+                labelStyle={'display': 'block'},  # Display the labels in a new line
+                className='checkbox-label',  # Apply the custom CSS class for the checkboxes
+                ),
+            ]),
+    ], style=dict(display='flex', width= '200 px')),
+
+    html.Br(),
+    html.Br(),
+    html.H2("Add the next one."),
+
+        html.Div(className="row", children=[
+            dcc.Dropdown(id="input_select_ocean_model_2",
+                options=[
+                    {"label": "Select Ocean Model", "value": '00'},
+                    {"label": "NEMO-ORCA05_1_month", "value": 'ORCA05'},
+                    ],
+                 multi=False,
+                 value='00',
+                 style={'width': "40%",}
+                 ), # first DD ends
+            dcc.Dropdown(id="input_select_year_2",
+                options=[
+                    {"label": str(year), "value": str(year)} for year in range(2009, 2019)
+                    ],
+                 multi=False,
+                 value=2015,
+                 style={'width': "28%",}
+                 ), # first DD ends
+            dcc.Dropdown(id="input_select_month_2",
+                 options=[
+                     {"label": month, "value": month[:3].lower()} for month in [
+                    "January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"
+                ]
+                    ],
+                 multi=False,
+                 value='jan',
+                 style={'width': "30%"}
+                 ), # second DD ends
+                ],style=dict(display='flex')),
+    
+    ## Empty container
+    # html.Div(id='empty_container_1', children=[]),
+
+    ## Horizontal break
+    html.Br(),
+    html.Div(className="row", children=[
+                html.Div(className='column', style={'margin-right': '20px'}, children=[
+                html.H2('Select Drivers'),
+                dcc.Checklist(
+                id='checkboxes_driver_2',
+                options=[
+                    {'label': 'Sea Surface Temperature', 'value': 'sst'},
+                    {'label': 'Dissolved Inorganic Carbon', 'value': 'dicp'},
+                    {'label': 'Salinity', 'value': 'sal'},
+                    {'label': 'Alkalinity', 'value': 'alk'},
+                    {'label': 'Sea Ice Coverege', 'value': 'seaice'},
+                ],
+                # value=['sst'],  # Set the default selected values
+                labelStyle={'display': 'block'},  # Display each label in a new line
+                className='checkbox-label',  # Apply the custom CSS class for the checkboxes
+                ), # end of checklist
+                dcc.Slider(
+                    id='slider_2',
+                    min=0,
+                    max=1,
+                    step=0.1,
+                    value=0.5,  # Set the initial value
+                    marks={i/10: str(i/10) for i in range(11)},  # Add marks for each step
+                ),
+            ]),
+
+            html.Div(className='column', children=[
+                html.H2('Select Target'),
+                dcc.Checklist(
+                id='checkboxes_target_2',
+                options=[
+                    {'label': 'CO2 Natural', 'value': 'fco2_pre'},
+                    {'label': 'CO2 Anthropogenic', 'value': 'fco2'},
+                ],
+                # value=['fco2_pre'],  # Set the default selected values
+                labelStyle={'display': 'block'},  # Display the labels in a new line
+                className='checkbox-label',  # Apply the custom CSS class for the checkboxes
+                ),
+            ]),
+    ], style=dict(display='flex', width= '200 px')),
+
+    html.Br(),
+
+    html.Div(id='regression_button_container', children=[
+        html.Button('Run analysis.', id='btn_regression', style= green_button_style),
+    ], style=dict(display='flex')),
+
+    html.Br(),
+
+    html.Div(id='regression_output_container_1', children=[
+        dcc.Loading(
+            id="reg1_driver1_slopes",
+            type="default",
+            children=html.Img(id='reg1_driver1_slopes_img', src = '', style={'height':'500px', 'width':'60%','align':'center'})),
+        html.Br(),
+        
+        dcc.Loading(
+            id="reg1_driver2_slopes",
+            type="default",
+            children=html.Img(id='reg1_driver2_slopes_img', src = '', style={'height':'500px', 'width':'60%','align':'center'})),
+        html.Br(),
+        
+        dcc.Loading(
+            id="reg1_driver3_slopes",
+            type="default",
+            children=html.Img(id='reg1_driver3_slopes_img', src = '', style={'height':'500px', 'width':'60%','align':'center'})),
+
+    ], style={'text-align':'center'}),
+
+    html.Br(),
+
+    html.Div(id='regression_output_container_2', children=[
+        dcc.Loading(
+            id="reg2_driver1_slopes",
+            type="default",
+            children=html.Img(id='reg2_driver1_slopes_img', src = '', style={'height':'500px', 'width':'60%','align':'center'})),
+        html.Br(),
+        
+        dcc.Loading(
+            id="reg2_driver2_slopes",
+            type="default",
+            children=html.Img(id='reg2_driver2_slopes_img', src = '', style={'height':'500px', 'width':'60%','align':'center'})),
+         html.Br(),
+        
+        dcc.Loading(
+            id="reg2_driver3_slopes",
+            type="default",
+            children=html.Img(id='reg2_driver3_slopes_img', src = '', style={'height':'500px', 'width':'60%','align':'center'})),
+
+    ], style={'text-align':'center'}),
+
+    html.Br(),
+    html.Br(),
+
+    html.H2("--> Run Hierarchical Clustering."),
+
+    html.Div(id='clusetring_button_container', children=[
+        html.Button('Run clustering.', id='btn_cluster', style= green_button_style),
+    ], style=dict(display='flex')),
 
     ## Empty container
     html.Div(id='output_container', children=[]),
@@ -133,14 +308,22 @@ app.layout = html.Div([
     html.Br(),
     # html.Button('Cluster', id='btn_cluster', style= green_button_style),
     html.Div(children=[dcc.Loading(
-            id="loading-dend",
+            id="loading-dend_1",
             type="default",
-            children=html.Img(id='dendro_original', src = '', style={'height':'500px', 'width':'60%','align':'center'}),
+            children=html.Img(id='dendro_original_1', src = '', style={'height':'500px', 'width':'60%','align':'center'}),
+        )], style={'text-align':'center'}),
+    
+    html.Br(),
+    
+    html.Div(children=[dcc.Loading(
+            id="loading-dend_2",
+            type="default",
+            children=html.Img(id='dendro_original_2', src = '', style={'height':'500px', 'width':'60%','align':'center'}),
         )], style={'text-align':'center'}),
 
     ## Horizontal break
     html.Br(),
-    html.H2(f"Step 2: Check out BIC scores and no. of clusters for different values of change in distance and variance thresholds.",),
+    html.H2(f"--> Check out BIC scores and no. of clusters for different values of change in distance and variance thresholds.",),
     html.Button('Get BIC scores.', id='get_bic_score', style= green_button_style),
     html.Br(),
     html.H3("The color of the bubble indicates the magnitude of the score. The bubble size corresponds to the number of clusters generated for a particular pair of threshold parameters."),
@@ -297,8 +480,34 @@ app.layout = html.Div([
 # ---------------------------- Callback functions ----------------------------
 # --------------------------- *************** -------------------------------
 
+#---------------------------- 1. Run regression. ----------------------------
+
+## i/p - year, month, drivers and target
+## o/p -  6 maps of the slopes in natural and anthropogenic scenario
+
+@app.callback([Output('dendro_original_1', 'src'),],
+    [Input(component_id='input_select_year', component_property='value'),
+    Input(component_id='input_select_month', component_property='value'),
+    Input('btn_cluster','n_clicks')])
+# the order of parameter follows the order of input for callback.
+def get_dendrogram(input_select_year, input_select_month,btn_cluster): 
+    return
+
+#---------------------------- 2. Run clustering. ----------------------------
+
+## o/p - 2 Dendrogram plots for natural and anthropogenic scenario
+
+
+
+#---------------------------- 3. Get BIC Scores. ----------------------------
+
+## o/p - 2 BIC plots for natural and anthropogenic scenario
+
+
+
+
 #---------------------------- Run regression and hierarchical clustering. ----------------------------
-@app.callback(Output('dendro_original', 'src'),
+@app.callback([Output('dendro_original_1', 'src'),],
     [Input(component_id='input_select_year', component_property='value'),
     Input(component_id='input_select_month', component_property='value'),
     Input('btn_cluster','n_clicks')])
