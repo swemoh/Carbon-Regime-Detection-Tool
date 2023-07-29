@@ -652,23 +652,9 @@ def download_clustered_data(n_clicks):
     print('---> Downloading the data in a CSV file.')
     return dcc.send_data_frame(final_data.to_csv, f"clustered_ocean_data_{str(datetime.datetime.now)}.csv")
 
-#---------------------------- Test Dash. ----------------------------
-# def test_figure():
-    # iris_df = px.data.iris()
-    # fig_iris = px.scatter(iris_df, x="sepal_width", y="sepal_length", color="species",
-    # size='petal_length', hover_data=['petal_width'])
-    # return fig_iris
-
 
 # ------------------------------- *************** ------------------------------------
 # ------------------------------- Run Dash Server ------------------------------------
 if __name__ == '__main__':
     app.run_server(debug=True, use_reloader=True)
     print("******* Shutting the server down! *******")
-
-    # TODO 
-    # - Note after dend explaining red sqaure and line
-    # - A para EXPLAINing the tool
-    # - fontsize for dendro titles, labels
-    # - red marker size
-    # - Ask Lavinia: What to say on cluster map.
