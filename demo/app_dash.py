@@ -67,7 +67,7 @@ green_button_style = {"margin": "15px",
                       }
 
 # Add the CSS stylesheet
-app.css.append_css({"external_url": "styles.css"})
+# app.css.append_css({"external_url": "styles.css"})
 
 # --------------------------------------- App layout ---------------------------------------
 
@@ -142,7 +142,7 @@ app.layout = html.Div([
                     min=0,
                     max=1,
                     step=0.1,
-                    value=0.5,  # Set the initial value
+                    value=0.9,  # Set the initial value
                     marks={i/10: str(i/10) for i in range(11)},  # Add marks for each step
                 ),
             ]),
@@ -485,13 +485,35 @@ app.layout = html.Div([
 ## i/p - year, month, drivers and target
 ## o/p -  6 maps of the slopes in natural and anthropogenic scenario
 
-@app.callback([Output('dendro_original_1', 'src'),],
+@app.callback([Output('reg1_driver1_slopes', 'src'),
+               Output('reg1_driver2_slopes', 'src'),
+               Output('reg1_driver3_slopes', 'src'),
+
+               Output('reg2_driver1_slopes', 'src'),
+               Output('reg2_driver2_slopes', 'src'),
+               Output('reg2_driver3_slopes', 'src'),
+
+               ],
     [Input(component_id='input_select_year', component_property='value'),
     Input(component_id='input_select_month', component_property='value'),
-    Input('btn_cluster','n_clicks')])
+    Input(component_id='checkboxes_driver', component_property='value'), 
+    Input(component_id='slider', component_property='value'), 
+    Input(component_id='checkboxes_target', component_property='value'), 
+
+    Input(component_id='input_select_year_2', component_property='value'),
+    Input(component_id='input_select_month_2', component_property='value'),
+    Input(component_id='checkboxes_driver_2', component_property='value'), 
+    Input(component_id='slider_2', component_property='value'), 
+    Input(component_id='checkboxes_target_2', component_property='value'),  
+
+    Input('regression_button_container','n_clicks')])
 # the order of parameter follows the order of input for callback.
-def get_dendrogram(input_select_year, input_select_month,btn_cluster): 
-    return
+def run_regression(input_select_year, input_select_month,btn_cluster):
+     if ctx.triggered_id == 'regression_button_container':
+        print("Do something.")
+        return
+     else:
+        return dash.no_update
 
 #---------------------------- 2. Run clustering. ----------------------------
 
