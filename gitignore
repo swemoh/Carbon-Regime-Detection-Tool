@@ -8,5 +8,6 @@
 *.pkl
 *-checkpoint.ipynb
 
-demo/data
+demo/data/*.pkl
+demo/tmp/*.jpg
 orca*
