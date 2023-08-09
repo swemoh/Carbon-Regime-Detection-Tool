@@ -900,7 +900,7 @@ def get_scatter_plot_slopes(driver_pairs, hc_df, clrs):
     else:
         fig_rows = (len(driver_pairs) + 1)/2
 
-    fig, ax = plt.subplots(nrows=fig_rows, ncols=2)
+    fig, ax = plt.subplots(nrows=int(fig_rows), ncols=2)
 
     hc_df_rounded = hc_df.round(2)
 
@@ -943,8 +943,21 @@ def analyse_clusters(drivers, hc_df, clrs):
 
     ## Random Forest
     
-    # fig, ax = plt.subplots(2, 2)
-    # for dp in driver_pairs:
-    #     get_scatter_plot_slopes(dp[0], dp[1], hc_df, clrs)
-
     return fig_path
+
+def analyse_clusters_(drivers, hc_df):
+
+    list_of_figures = []
+    # hc_df['bubble_size'] = 1
+
+    driver_pairs = []
+    for i in range(len(drivers)):
+        for j in range(i + 1, len(drivers)):
+            driver_pairs.append((drivers[i], drivers[j]))
+    
+    for dp in driver_pairs:
+        fig = px.scatter(hc_df, x=f'slope_{dp[1]}', y=f'slope_{dp[0]}', color="cluster", hover_data=['cluster'])
+        fig.update_layout(title = f'slope_{dp[0]} vs slope_{dp[1]}')
+        list_of_figures.append(fig)
+
+    return list_of_figures

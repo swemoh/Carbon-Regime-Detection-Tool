@@ -26,8 +26,9 @@ warnings.simplefilter('ignore')
 
 # local functions
 # import backend
-from backend import get_ocean_data, build_grids, fit_multivariate_lin_regression, plot_slope_maps, run_hc, plot_bic_score_cluster_no, detect_clusters_on_dendrogram, get_cluster_map
-
+from backend import get_ocean_data, build_grids, fit_multivariate_lin_regression, plot_slope_maps, run_hc
+from backend import plot_bic_score_cluster_no, detect_clusters_on_dendrogram, get_cluster_map, analyse_clusters
+from backend import analyse_clusters_
 
 # for static images
 import io
@@ -567,13 +568,19 @@ app.layout = html.Div([
         dcc.Loading(id="loading-dist_image",
                     type="circle",
                     children=[
-                    html.Img(id='cluster_dist_image', src = '', style={'height':'700px', 'width':'80%',}),
+                    # html.Img(id='cluster_dist_image', src = '', style={'height':'700px', 'width':'80%',}),
+                    dcc.Graph(id='cluster_dist_image', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+                    dcc.Graph(id='cluster_dist_image_2', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+                    dcc.Graph(id='cluster_dist_image_3', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+                    dcc.Graph(id='cluster_dist_image_4', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+                    dcc.Graph(id='cluster_dist_image_5', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+                    dcc.Graph(id='cluster_dist_image_6', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
                     ]),
-        dcc.Loading(id="loading-dist_image_2",
-                    type="circle",
-                    children=[
-                    html.Img(id='cluster_dist_image_2', src = '', style={'height':'700px', 'width':'80%',}),
-                    ]),
+        # dcc.Loading(id="loading-dist_image_2",
+        #             type="circle",
+        #             children=[
+        #             html.Img(id='cluster_dist_image_2', src = '', style={'height':'700px', 'width':'80%',}),
+        #             ]),
         html.Br(),
         html.H4('B. Clustering Overview: Averaged standardized values of oceanic CO2 drivers in each cluster.'),
         dcc.Loading(
@@ -987,20 +994,41 @@ def load_cluster_maps(btn_get_cluster_maps):
 
 #---------------------------- 5. Analyse clusters. ----------------------------
 #----------------------------  1) Random Forest. 2) Mean / Median/ Std Deviation Tables 3) Slope Scatter plots ----------------------------
+# @app.callback(
+#     [Output('cluster_dist_image', 'src'), Output('cluster_dist_image_2', 'src')],
+#     [Input('btn_get_cluster_details','n_clicks')])
+# # the order of parameter follows the order of input for callback.
+# def load_cluster_details(btn_get_cluster_details):
+#     if ctx.triggered_id == 'btn_get_cluster_details':
+
+#         distribution_fig_path = analyse_clusters(drivers, hc_df, cluster_colors)
+#         distribution_fig_path_2 = analyse_clusters(drivers_2, hc_df_2, cluster_colors_2)
+
+#         return distribution_fig_path, distribution_fig_path_2
+
+#     else:
+#         return dash.no_update, dash.no_update
+
 @app.callback(
-    [Output('cluster_dist_image', 'src'), Output('cluster_dist_image_2', 'src')],
+    [Output('cluster_dist_image', 'figure'), 
+     Output('cluster_dist_image_2', 'figure'),
+     Output('cluster_dist_image_3', 'figure'),
+     Output('cluster_dist_image_4', 'figure'),
+     Output('cluster_dist_image_5', 'figure'),
+     Output('cluster_dist_image_6', 'figure'),
+     ],
     [Input('btn_get_cluster_details','n_clicks')])
 # the order of parameter follows the order of input for callback.
 def load_cluster_details(btn_get_cluster_details):
     if ctx.triggered_id == 'btn_get_cluster_details':
 
-        distribution_fig_path = analyse_clusters(drivers, hc_df, cluster_colors)
-        distribution_fig_path_2 = analyse_clusters(drivers_2, hc_df_2, cluster_colors_2)
+        distribution_fig_path = analyse_clusters_(drivers, hc_df)
+        distribution_fig_path_2 = analyse_clusters_(drivers_2, hc_df_2)
 
-        return distribution_fig_path, distribution_fig_path_2
+        return distribution_fig_path[0], distribution_fig_path[1], distribution_fig_path[2], distribution_fig_path_2[0], distribution_fig_path_2[1], distribution_fig_path_2[2]
 
     else:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
 #---------------------------- 6. Download Maps. ----------------------------
@@ -1029,6 +1057,7 @@ if __name__ == '__main__':
     """
     TODO:
     - Calc total runtime for each function
+    - Maybe add a notification sound when a function is finished/output is ready
     - implement sea ice slider functionalities
     - Add license to the github code
     """
