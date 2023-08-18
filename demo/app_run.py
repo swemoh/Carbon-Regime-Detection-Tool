@@ -11,6 +11,9 @@ import matplotlib
 matplotlib.use('Agg') ## Adding to avoid assertion failed error. It would shut down the server.
 import matplotlib.pyplot as plt
 import colorcet as cc
+import json
+
+# from lenspy import DynamicPlot
 
 
 # Interactive UI
@@ -26,9 +29,9 @@ warnings.simplefilter('ignore')
 
 # local functions
 # import backend
-from backend import get_ocean_data, build_grids, fit_multivariate_lin_regression, plot_slope_maps, run_hc
-from backend import plot_bic_score_cluster_no, detect_clusters_on_dendrogram, get_cluster_map, analyse_clusters
-from backend import analyse_clusters_
+from backend import get_ocean_data, build_grids, fit_multivariate_lin_regression, plot_slope_maps, run_hc #plot_slope_maps_plotly
+from backend import plot_bic_score_cluster_no, detect_clusters_on_dendrogram, get_cluster_map
+from backend import analyse_clusters_, get_random_forest_graphs, get_cluster_summary_details
 
 # for static images
 import io
@@ -85,11 +88,17 @@ cluster_colors_2 = None
 # dendrogram_plot = None
 
 
+textvalue = {"Cluster_labels": {"0": 1.0, "1": 2.0, "2": 3.0, "3": 4.0, "4": 5.0, "5": 6.0, "6": 7.0, "7": 8.0, "8": 9.0}, "Mean slope_SST": {"0": 11.617813892582348, "1": 411.2175598144531, "2": 79.00297546386719, "3": -12.861379809478816, "4": 18.110509959747606, "5": 27.648557662963867, "6": -30.071836471557617, "7": -85.80758562781936, "8": -228.46382796596473}, "Median slope_SST": {"0": 11.507404327392578, "1": 411.2175598144531, "2": 79.00297546386719, "3": -13.754770278930664, "4": 13.86928939819336, "5": 27.648557662963867, "6": -30.071836471557617, "7": -81.34871673583984, "8": -210.37831115722656}, "Std. Dev slope_SST": {"0": 4.964051403313165, "1": 0.0, "2": 0.0, "3": 23.785669956823245, "4": 19.654569090447925, "5": 0.0, "6": 0.0, "7": 28.640812695090776, "8": 79.17782721174007}, "Mean slope_DICP": {"0": 1.2953531831910219, "1": -24.67351722717285, "2": -14.651311874389648, "3": 2.299451827990995, "4": 1.8320281881492284, "5": 18.034093856811523, "6": 19.325162887573242, "7": 2.187595133282641, "8": 2.226955064725428}, "Median slope_DICP": {"0": 1.2720415592193604, "1": -24.67351722717285, "2": -14.651311874389648, "3": 2.260685682296753, "4": 1.7730202674865723, "5": 18.034093856811523, "6": 19.325162887573242, "7": 2.243786334991455, "8": 2.240457057952881}, "Std. Dev slope_DICP": {"0": 0.20948700977987195, "1": 0.0, "2": 0.0, "3": 0.6535840062718457, "4": 0.24247206498979432, "5": 0.0, "6": 0.0, "7": 0.48114367919936096, "8": 0.43048005765124575}, "Mean slope_ALK": {"0": -0.8988023009633921, "1": 24.868146896362305, "2": 14.95151138305664, "3": -1.9916649964457307, "4": -1.6161329827933397, "5": -21.93532943725586, "6": -11.006959915161133, "7": -1.8668428154577301, "8": -1.9967885072662237}, "Median slope_ALK": {"0": -0.8810020685195923, "1": 24.868146896362305, "2": 14.95151138305664, "3": -1.9725804328918457, "4": -1.531843662261963, "5": -21.93532943725586, "6": -11.006959915161133, "7": -1.9820913076400757, "8": -2.0467121601104736}, "Std. Dev slope_ALK": {"0": 0.20724851019648136, "1": 0.0, "2": 0.0, "3": 0.7179773367223017, "4": 0.3484541262405446, "5": 0.0, "6": 0.0, "7": 0.581153568964698, "8": 0.455063630616868}, "Area(in km. sq)": {"0": 264555.5, "1": 264555.5, "2": 264555.5, "3": 264555.5, "4": 264555.5, "5": 264555.5, "6": 264555.5, "7": 264555.5, "8": 264555.5}}
+
+
+
+
+
 
 global COLOMN_LIST, CLUSTER_DETAILS
 COLOMN_LIST = ['nav_lat', 'nav_lon', 'SST', 'DIC', 'ALK', 'fco2', 'cluster',
        'slope_sst', 'slope_dic', 'slope_alk']
-CLUSTER_DETAILS = ['Cluster Label','SST Slope', 'DIC Slope', 'ALK Slope']
+CLUSTER_DETAILS = ['Cluster Label', 'Area (sq. Km)', 'Driver' ,'Mean Regression coeffcient', 'Median Regression coeffcient', 'Standard Deviation Regression coeffcient']
 PAGE_SIZE = 20
 LOGO_GEOMAR_PATH = 'assets/geomar-logo.png'
 encoded_LOGO_GEOMAR_PATH = base64.b64encode(open(LOGO_GEOMAR_PATH, 'rb').read())
@@ -299,19 +308,25 @@ app.layout = html.Div([
         dcc.Loading(
             id="reg1_driver1_slopes_loading",
             type="default",
-            children=html.Img(id='reg1_driver1_slopes_img', src = '', style={'height':'800px', 'width':'80%','align':'center'})),
+            # children=dcc.Graph(id='reg1_driver1_slopes_img', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+            children=html.Img(id='reg1_driver1_slopes_img', src = '', style={'height':'450px', 'width':'60%','align':'center'}), 
+            ),
         html.Br(),
         
         dcc.Loading(
             id="reg1_driver2_slopes_loading",
             type="default",
-            children=html.Img(id='reg1_driver2_slopes_img', src = '', style={'height':'800px', 'width':'80%','align':'center'})),
+            # children=dcc.Graph(id='reg1_driver2_slopes_img', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+            children=html.Img(id='reg1_driver2_slopes_img', src = '', style={'height':'450px', 'width':'60%','align':'center'}),
+            ),
         html.Br(),
         
         dcc.Loading(
             id="reg1_driver3_slopes_loading",
             type="default",
-            children=html.Img(id='reg1_driver3_slopes_img', src = '', style={'height':'800px', 'width':'80%','align':'center'})),
+            # children=dcc.Graph(id='reg1_driver3_slopes_img', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+            children=html.Img(id='reg1_driver3_slopes_img', src = '', style={'height':'450px', 'width':'60%','align':'center'}),
+            ),
 
     ], style={'text-align':'center'}),
 
@@ -321,19 +336,25 @@ app.layout = html.Div([
         dcc.Loading(
             id="reg2_driver1_slopes_loading",
             type="default",
-            children=html.Img(id='reg2_driver1_slopes_img', src = '', style={'height':'800px', 'width':'80%','align':'center'})),
+            # children=dcc.Graph(id='reg2_driver1_slopes_img', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+            children=html.Img(id='reg2_driver1_slopes_img', src = '', style={'height':'450px', 'width':'60%','align':'center'}),
+            ),
         html.Br(),
         
         dcc.Loading(
             id="reg2_driver2_slopes_loading",
             type="default",
-            children=html.Img(id='reg2_driver2_slopes_img', src = '', style={'height':'800px', 'width':'80%','align':'center'})),
+            # children=dcc.Graph(id='reg2_driver2_slopes_img', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+            children=html.Img(id='reg2_driver2_slopes_img', src = '', style={'height':'450px', 'width':'60%','align':'center'}),
+            ),
          html.Br(),
         
         dcc.Loading(
             id="reg2_driver3_slopes_loading",
             type="default",
-            children=html.Img(id='reg2_driver3_slopes_img', src = '', style={'height':'800px', 'width':'80%','align':'center'})),
+            # children=dcc.Graph(id='reg2_driver3_slopes_img', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+            children=html.Img(id='reg2_driver3_slopes_img', src = '', style={'height':'450px', 'width':'60%','align':'center'}),
+            ),
 
     ], style={'text-align':'center'}),
 
@@ -458,7 +479,7 @@ app.layout = html.Div([
         dcc.Loading(
             id="cluster-loading",
             type="circle",
-            children=[html.Img(id='dendro_cut', src = '', style={'height':'500px', 'width':'60%','align':'center'}),]
+            children=[html.Img(id='dendro_cut', src = '', style={'height':'800px', 'width':'80%','align':'center'}),]
         )], style={'text-align':'center'}),
     
     html.Br(),
@@ -536,7 +557,7 @@ app.layout = html.Div([
         dcc.Loading(
             id="cluster-loading_2",
             type="circle",
-            children=[html.Img(id='dendro_cut_2', src = '', style={'height':'500px', 'width':'60%','align':'center'}),]
+            children=[html.Img(id='dendro_cut_2', src = '', style={'height':'800px', 'width':'80%','align':'center'}),]
         )], style={'text-align':'center'}),
 
     html.Br(),
@@ -549,13 +570,13 @@ app.layout = html.Div([
          dcc.Loading(id="loading-cluster-map",
                     type="circle",
                     children=[
-                    html.Img(id='cluster_map_image', src = '', style={'height':'800px', 'width':'80%',}),
+                    html.Img(id='cluster_map_image', src = '', style={'height':'450px', 'width':'60%',}),
                     # dcc.Graph(id='cluster_map_graph', style={'height':'1200px', 'width':'100%','align':'center'}),
                     ]),
         dcc.Loading(id="loading-cluster-map_2",
                     type="circle",
                     children=[
-                    html.Img(id='cluster_map_image_2', src = '', style={'height':'800px', 'width':'80%',}),
+                    html.Img(id='cluster_map_image_2', src = '', style={'height':'450px', 'width':'80%',}),
                     # dcc.Graph(id='cluster_map_graph', style={'height':'1200px', 'width':'100%','align':'center'}),
                     ]),
 
@@ -563,64 +584,94 @@ app.layout = html.Div([
     html.Br(),
     html.H2(" Step 4: Study the output.",),
     html.Button("Analyse Clusters.", id="btn_get_cluster_details", style= green_button_style),
+
     html.Div(children=[
-        html.H3('A. Clustered multivariate linear regression coefficients distribution plot.'),
+                html.H3('A. Clustered multivariate linear regression coefficients distribution plot.'),
         dcc.Loading(id="loading-dist_image",
                     type="circle",
                     children=[
                     # html.Img(id='cluster_dist_image', src = '', style={'height':'700px', 'width':'80%',}),
+                    html.H4("From 1st model:"),
+                    html.Br(),
+
                     dcc.Graph(id='cluster_dist_image', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
                     dcc.Graph(id='cluster_dist_image_2', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
                     dcc.Graph(id='cluster_dist_image_3', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+
+                    html.H4("From 2nd model:"),
+                    html.Br(),
+
                     dcc.Graph(id='cluster_dist_image_4', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
                     dcc.Graph(id='cluster_dist_image_5', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
                     dcc.Graph(id='cluster_dist_image_6', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
                     ]),
-        # dcc.Loading(id="loading-dist_image_2",
-        #             type="circle",
-        #             children=[
-        #             html.Img(id='cluster_dist_image_2', src = '', style={'height':'700px', 'width':'80%',}),
-        #             ]),
-        html.Br(),
-        html.H4('B. Clustering Overview: Averaged standardized values of oceanic CO2 drivers in each cluster.'),
+    ]),
+    html.Br(),
+    html.Div(children=[
+        html.H3('B. Explore Non-linear target-driver relationships in the detected carbon regimes.'),
+        html.Button("Run Random Forest.", id="btn_run_random_forest", style= green_button_style),
         dcc.Loading(
-            id="loading-datatable-cluster-detail",
+            id = 'loading-random-forest',
+            type='circle',
+            children=[
+                html.H4("From 1st model:"),
+                dcc.Graph(id='rf_fig', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+                html.H4("From 2nd model:"),
+                dcc.Graph(id='rf_fig_2', figure={}, style={'height':'500px', 'width':'100%','align':'center'}),
+            ],
+        ),
+    ]),
+    html.Div(children=[
+        html.H3('C. Clustering Overview.'),
+        html.Button("Show", id="btn_show_cluster_summary", style= green_button_style),
+        dcc.Loading(
+            id="loading-datatable-summary-detail",
             type="circle",
-            children=[dash_table.DataTable(id='datatable-cluster-detail',
+            children=[
+                    html.H4("From 1st model:"),
+                    # Display the JSON data from the store
+                    # dcc.Textarea(id='json-display',value = textvalue, readOnly=False, style={'width': '60%', 'height': 500}),
+                    
+                    # dcc.Textarea(id='json-display_2', readOnly=False, style={'width': '60%', 'height': 500}),
+
+                    dash_table.DataTable(id='datatable-cluster-detail',
                     columns=[{'name': i, 'id': i} for i in CLUSTER_DETAILS],
                     page_current=0,
                     page_size=PAGE_SIZE,
                     page_action='custom',
                     style_table={'width':'50%','margin-left':'350px'},
-                    style_header={'textAlign': 'center'},
-            )]),
-         dcc.Loading(
-            id="loading-datatable-cluster-detail_2",
-            type="circle",
-            children=[dash_table.DataTable(id='datatable-cluster-detail_2',
+                    style_header={'textAlign': 'center'},),
+
+                    html.Br(),                 
+                    html.H4("From 2nd model:"),
+
+                    dash_table.DataTable(id='datatable-cluster-detail-2',
                     columns=[{'name': i, 'id': i} for i in CLUSTER_DETAILS],
                     page_current=0,
                     page_size=PAGE_SIZE,
                     page_action='custom',
                     style_table={'width':'50%','margin-left':'350px'},
-                    style_header={'textAlign': 'center'},
-            )]),
+                    style_header={'textAlign': 'center'},)
+            ]),
         html.Br(),                 
     ]),
     html.H2(" Step 5: Download the output.",),
-    html.H4("Here is the clustering output in a tabular format. You can only see random 20 rows. To access the complete data with more than 200,000 datapoints, click on the download button below.",
-                            style={'color':'blue'}),
-    dcc.Loading(id="loading-datatable-upload",type="circle",
-                        children=[dash_table.DataTable(id='datatable-upload-container',
-                            columns=[{'name': i, 'id': i} for i in COLOMN_LIST],
-                            page_current=0,
-                            page_size=PAGE_SIZE,
-                            page_action='custom',
-                            style_table={'width':'70%','margin-left':'200px'},
-                            style_header={'textAlign': 'center'})]),
+    # html.H4("Here is the clustering output in a tabular format. You can only see random 20 rows. To access the complete data with more than 200,000 datapoints, click on the download button below.",
+    #                         style={'color':'blue'}),
+    # dcc.Loading(id="loading-datatable-upload",type="circle",
+    #                     children=[dash_table.DataTable(id='datatable-upload-container',
+    #                         columns=[{'name': i, 'id': i} for i in COLOMN_LIST],
+    #                         page_current=0,
+    #                         page_size=PAGE_SIZE,
+    #                         page_action='custom',
+    #                         style_table={'width':'70%','margin-left':'200px'},
+    #                         style_header={'textAlign': 'center'})]),
 
     html.Br(),
-    html.Button("Download output.", id="btn_download_cluster_details", style= green_button_style),
+    html.Button("Download output.", id="btn_download", style= green_button_style),
+    # html.Button("Download CSV", id="btn_csv", style= green_button_style),
+    dcc.Download(id="download-dataframe-csv",),
+    dcc.Download(id="download-dataframe-csv_2",),
     html.Br(),
     html.Br(),
 ])
@@ -775,16 +826,30 @@ def load_regression(input_select_year, input_select_month, checkboxes_driver, sl
         fig_paths = []
         print("---> Plotting slopes.")
         for driver in drivers:
-            plot_path = plot_slope_maps(slopes_data, input_select_year, input_select_month, driver)
+            # plot_path = plot_slope_maps_plotly(slopes_data, input_select_year, input_select_month, driver)
+            plot_path = plot_slope_maps(slopes_data, input_select_year, input_select_month, driver) #better outcome than plotly
             fig_paths.append(plot_path)
         
         print("---> Plotting a few more.")
         for driver_2 in drivers_2:
-            plot_path = plot_slope_maps(slopes_data_2, input_select_year_2, input_select_month_2, driver_2)
+            # plot_path = plot_slope_maps_plotly(slopes_data_2, input_select_year_2, input_select_month_2, driver_2)
+            plot_path = plot_slope_maps(slopes_data_2, input_select_year_2, input_select_month_2, driver_2) #better outcome than plotly
             fig_paths.append(plot_path)
+        
+        print("--> Finished plotting.")
 
-        if len(fig_paths) == 6:
-            return fig_paths[0], fig_paths[1], fig_paths[2], fig_paths[3], fig_paths[4], fig_paths[5]
+        # https://stackoverflow.com/questions/71642795/browser-is-crashing-when-using-dropdown-component-with-large-data-in-plotly-dash/71692056#71692056 
+        # https://lenspy.readthedocs.io/en/latest/quickstart.html#using-with-ploty-dash-applications
+        # https://github.com/telemetrydb/lenspy/blob/master/lenspy/__init__.py 
+        # if len(fig_paths) == 6:
+        #     plot1 = DynamicPlot(fig_paths[0])
+        #     plot2 = DynamicPlot(fig_paths[1])
+        #     plot3 = DynamicPlot(fig_paths[2])
+        #     plot4 = DynamicPlot(fig_paths[3])
+        #     plot5 = DynamicPlot(fig_paths[4])
+        #     plot6 = DynamicPlot(fig_paths[5])
+        # return plot1.refine_plot, plot2.refine_plot, plot3.refine_plot, plot4.refine_plot, plot5.refine_plot, plot6.refine_plot
+        return fig_paths[0], fig_paths[1], fig_paths[2], fig_paths[3], fig_paths[4], fig_paths[5]
 
         if len(fig_paths) == 5:
             return fig_paths[0], fig_paths[1], fig_paths[2], fig_paths[3], fig_paths[4], dash.no_update
@@ -984,8 +1049,13 @@ def load_cluster_maps(btn_get_cluster_maps):
         global hc_df
         global hc_df_2
 
+        print("--> Cluster maps are being prepared.")
+
+
         hc_df, cluster_colors, final_data, cluster_map_path = get_cluster_map(grid_index_list, norm_hc_df, grids_df_lst, drivers, del_var, del_dist, year, month )
         hc_df_2, cluster_colors_2, final_data_2, cluster_map_path_2 = get_cluster_map(grid_index_list_2, norm_hc_df_2, grids_df_lst_2, drivers_2, del_var_2, del_dist_2, year_2, month_2)
+        
+        print("--> Cluster maps are generated.")
 
         return cluster_map_path, cluster_map_path_2
 
@@ -1021,17 +1091,52 @@ def load_cluster_maps(btn_get_cluster_maps):
 # the order of parameter follows the order of input for callback.
 def load_cluster_details(btn_get_cluster_details):
     if ctx.triggered_id == 'btn_get_cluster_details':
-
+        print("--> Scatter plots among slopes are being prepared.")
         distribution_fig_path = analyse_clusters_(drivers, hc_df)
         distribution_fig_path_2 = analyse_clusters_(drivers_2, hc_df_2)
+        print("--> Scatter plots are generated.")
 
         return distribution_fig_path[0], distribution_fig_path[1], distribution_fig_path[2], distribution_fig_path_2[0], distribution_fig_path_2[1], distribution_fig_path_2[2]
 
     else:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
+@app.callback([Output('rf_fig', 'figure'), Output('rf_fig_2', 'figure')],[Input('btn_run_random_forest','n_clicks')])
+def load_random_forest_output(btn_run_random_forest):
+    if ctx.triggered_id == 'btn_run_random_forest':
+        print("--> Random forest is running.")
+        rf = get_random_forest_graphs(final_data, drivers, target, month, year)
+        rf_2 = get_random_forest_graphs(final_data_2, drivers_2, target_2, month_2, year_2)
+        print("--> Feature importance has been calculated.")
+        return rf, rf_2
+    else:
+        return dash.no_update, dash.no_update
 
-#---------------------------- 6. Download Maps. ----------------------------
+@app.callback([ Output('datatable-cluster-detail', 'data'),  Output('datatable-cluster-detail-2', 'data')],
+[Input('btn_show_cluster_summary','n_clicks')])
+def load_model_summary(btn_show_cluster_summary):
+    if ctx.triggered_id == 'btn_show_cluster_summary':
+        detail_df = get_cluster_summary_details(final_data, drivers)
+        detail_df = detail_df.round(2)
+
+        detail_df_2 = get_cluster_summary_details(final_data_2, drivers_2)
+        detail_df_2 = detail_df_2.round(2)
+
+        print("--> Tables are ready!")
+        return detail_df.to_dict('records'), detail_df_2.to_dict('records')
+    else:
+        return dash.no_update, dash.no_update
+
+#---------------------------- 6. Download Clustered Data. ----------------------------
+
+@app.callback(
+   [Output("download-dataframe-csv", "data"),  Output("download-dataframe-csv_2", "data"),],
+    Input("btn_download", "n_clicks"),
+    prevent_initial_call=True,
+)
+def download_clustered_data(n_clicks):
+    print('---> Downloading the data in CSV files.')
+    return dcc.send_data_frame(final_data.to_csv, f"model_1_{str(datetime.datetime.now)}.csv"), dcc.send_data_frame(final_data_2.to_csv, f"model_2_{str(datetime.datetime.now)}.csv")
 
 
 
@@ -1053,6 +1158,10 @@ if __name__ == '__main__':
 
     # After the server is closed...
     print("******* Shutting the server down! *******")
+
+    # test_dict = {"Cluster_labels": {"0": 1.0, "1": 2.0, "2": 3.0, "3": 4.0, "4": 5.0, "5": 6.0, "6": 7.0, "7": 8.0, "8": 9.0}, 
+    # "Mean slope_SST": {"0": 11.617813892582348, "1": 411.2175598144531, "2": 79.00297546386719, "3": -12.861379809478816, "4": 18.110509959747606, "5": 27.648557662963867, "6": -30.071836471557617, "7": -85.80758562781936, "8": -228.46382796596473}, 
+    # "Median slope_SST": {"0": 11.507404327392578, "1": 411.2175598144531, "2": 79.00297546386719, "3": -13.754770278930664, "4": 13.86928939819336, "5": 27.648557662963867, "6": -30.071836471557617, "7": -81.34871673583984, "8": -210.37831115722656}, "Std. Dev slope_SST": {"0": 4.964051403313165, "1": 0.0, "2": 0.0, "3": 23.785669956823245, "4": 19.654569090447925, "5": 0.0, "6": 0.0, "7": 28.640812695090776, "8": 79.17782721174007}, "Mean slope_DICP": {"0": 1.2953531831910219, "1": -24.67351722717285, "2": -14.651311874389648, "3": 2.299451827990995, "4": 1.8320281881492284, "5": 18.034093856811523, "6": 19.325162887573242, "7": 2.187595133282641, "8": 2.226955064725428}, "Median slope_DICP": {"0": 1.2720415592193604, "1": -24.67351722717285, "2": -14.651311874389648, "3": 2.260685682296753, "4": 1.7730202674865723, "5": 18.034093856811523, "6": 19.325162887573242, "7": 2.243786334991455, "8": 2.240457057952881}, "Std. Dev slope_DICP": {"0": 0.20948700977987195, "1": 0.0, "2": 0.0, "3": 0.6535840062718457, "4": 0.24247206498979432, "5": 0.0, "6": 0.0, "7": 0.48114367919936096, "8": 0.43048005765124575}, "Mean slope_ALK": {"0": -0.8988023009633921, "1": 24.868146896362305, "2": 14.95151138305664, "3": -1.9916649964457307, "4": -1.6161329827933397, "5": -21.93532943725586, "6": -11.006959915161133, "7": -1.8668428154577301, "8": -1.9967885072662237}, "Median slope_ALK": {"0": -0.8810020685195923, "1": 24.868146896362305, "2": 14.95151138305664, "3": -1.9725804328918457, "4": -1.531843662261963, "5": -21.93532943725586, "6": -11.006959915161133, "7": -1.9820913076400757, "8": -2.0467121601104736}, "Std. Dev slope_ALK": {"0": 0.20724851019648136, "1": 0.0, "2": 0.0, "3": 0.7179773367223017, "4": 0.3484541262405446, "5": 0.0, "6": 0.0, "7": 0.581153568964698, "8": 0.455063630616868}, "Area(in km. sq)": {"0": 264555.5, "1": 264555.5, "2": 264555.5, "3": 264555.5, "4": 264555.5, "5": 264555.5, "6": 264555.5, "7": 264555.5, "8": 264555.5}}
 
     """
     TODO:

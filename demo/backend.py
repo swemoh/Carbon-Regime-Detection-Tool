@@ -2,6 +2,7 @@ import xarray as xr
 import pandas as pd
 from glob import glob
 import matplotlib
+# dpi = matplotlib.rcParams['figure.dpi']
 import matplotlib.pyplot as plt
 from matplotlib import axes
 import colorcet as cc
@@ -9,6 +10,7 @@ import colorcet as cc
 
 import io
 import base64
+from base64 import b64encode
 
 import numpy as np
 import numpy.matlib
@@ -48,6 +50,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from scipy import stats
 from scipy.cluster import hierarchy
 from scipy.spatial import distance
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
 
 from scipy import stats
 from sklearn.feature_selection import chi2
@@ -277,6 +282,64 @@ def fit_multivariate_lin_regression(grids_df_lst, feat_names, target):
 
 #---------------------------- 4. Plot Coefficients/ Slopes of Multivariate Linear Regression. ----------------------------
 
+def calc_vmin_max(limit_low, limit_high, boundary):
+    mean = (limit_low+limit_high)/2
+    vmin = mean - boundary
+    vmax = mean + boundary
+    return vmin, vmax
+
+def get_vmin_max(median, boundary):
+    vmin = median - boundary
+    vmax = median + boundary
+    return vmin, vmax
+
+def plot_slope_maps_plotly(data_df, input_select_year, input_select_month, driver):
+    N = int(1e6) # Number of points
+    # Specify vmin and vmax for the colorbar
+    # vmin = -5  # Minimum temperature value
+    # vmax = 5  # Maximum temperature value
+
+    vmin, vmax = get_vmin_max(median = data_df[f'slope_{driver}'].median(), boundary = 1)
+
+    # fetch values from below column name
+    column_name = f'slope_{driver}'
+
+    fig = px.scatter_geo(data_df, 
+                     lat='nav_lat', lon='nav_lon',
+                     color=column_name,
+                     color_continuous_scale='Viridis', 
+                     range_color=[vmin, vmax], 
+                    #  render_mode='webgl',
+                    #  colorbar_min=vmin,  # Set vmin
+                    #  colorbar_max=vmax,  # Set vmax
+                    #  hover_name=column_name,
+                     title=f'Regression coefficients of {driver} in {input_select_month}, {input_select_year}')
+    
+    if driver == 'SST':
+        si_unit = '(µ-atm/°C)'
+    elif (driver == 'DICP') or (driver == 'DIC') or (driver == 'ALK'):
+        si_unit = 'µ-atm*kg/µ-mol'
+    else:
+        si_unit = ''
+
+    fig.update_geos(projection_type='natural earth', #'orthographic'
+                    showcoastlines=True, coastlinecolor="RebeccaPurple")
+    
+    fig.update_traces(marker=dict(size=1))
+
+    fig.update_layout(coloraxis_colorbar=dict(
+                                            title=f'Regression coefficients of {driver} {si_unit}',
+                                            len=0.5,
+                                            # xanchor="right", x=1,
+                                            # yanchor='bottom', y=0.1,
+                                            thickness=10,
+                                            ))
+
+    img_bytes = fig.to_image(format="png")
+    encoding = base64.b64encode(img_bytes).decode()
+    img_b64 = "data:image/png;base64," + encoding
+    return img_b64
+
 def plot_slope_maps(data_df, input_select_year, input_select_month, driver):
     buf = io.BytesIO() # in-memory files
     plt.figure(figsize=(12, 8))
@@ -292,38 +355,58 @@ def plot_slope_maps(data_df, input_select_year, input_select_month, driver):
     # plt.title(f'Slope SST in {y} - {m}', fontsize=20)
     plt.title(f'Slope of {driver} in {input_select_month}, {input_select_year}', fontsize=20)
 
-    if driver == 'SST':
-        vmin = -10
-        vmax = 30
-    if driver == 'DICP':
-        vmin = 0 
-        vmax = 2
-    if driver == 'DIC':
-        vmin = 0 
-        vmax = 2
-    if driver == 'ALK':
-        vmin = -2
-        vmax = 5
-    if driver == 'SAL':
-        vmin = -5 
-        vmax = 5
-    else:
-        vmin = -5
-        vmax = 5
-    world_map_scatter =world_map.scatter(data_df['nav_lon'], data_df['nav_lat'],s = 5, c = data_df[driver],
-                        vmin=vmin, vmax =vmax, cmap='RdYlBu_r', edgecolors='none')
+    # vmin, vmax = calc_vmin_max(limit_low = data_df[f'slope_{driver}'].min(), 
+    #                            limit_high = data_df[f'slope_{driver}'].max(), 
+    #                             boundary=1)
+
+    vmin, vmax = get_vmin_max(median = data_df[f'slope_{driver}'].median(), boundary = 1)
+
+    # if driver == 'SST':
+    #     vmin = data_df['slope_SST'].min()
+    #     vmax = data_df['slope_SST'].max()
+    # if driver == 'DICP':
+    #     vmin = data_df['slope_DICP'].min()
+    #     vmax = data_df['slope_DICP'].max()
+    # if driver == 'DIC':
+    #     vmin = data_df['slope_DIC'].min()
+    #     vmax = data_df['slope_DIC'].max()
+    # if driver == 'ALK':
+    #     vmin = data_df['slope_ALK'].min()
+    #     vmax = data_df['slope_ALK'].max()
+    # if driver == 'SAL':
+    #     vmin = data_df['slope_SAL'].min()
+    #     vmax = data_df['slope_SAL'].max()
+    # else:
+    #     vmin = -5
+    #     vmax = 5
+
+    
+    world_map_scatter =world_map.scatter(
+        data_df['nav_lon'], data_df['nav_lat'],s = 5, 
+        c = data_df[f'slope_{driver}'],
+        vmin=vmin, vmax =vmax, cmap='RdYlBu_r', edgecolors='none')
 
     cbar = plt.colorbar(world_map_scatter, shrink = 0.5)
     cbar.ax.tick_params(labelsize=12)
-    cbar.set_label(f'Slope {driver}', fontsize=20)
 
+    if driver == 'SST':
+        si_unit = '(µ-atm/°C)'
+    elif (driver == 'DICP') or (driver == 'DIC') or (driver == 'ALK'):
+        si_unit = '(µ-atm*kg/µ-mol)'
+    else:
+        si_unit = ''
+
+    cbar.set_label(f'Slope {driver} {si_unit}', fontsize=15)
 
     local_file_path = f'tmp/slopes_{driver}_{str(input_select_year)}_{input_select_month}.jpg'
-    plt.savefig(local_file_path)
-    plt.savefig(buf, format = "jpg") # save to the above file object
+
+    # To remove/hide whitespace around the border, we can set bbox_inches='tight' in the savefig() method. 
+    # Similarly, to remove the white border around the image, we set pad_inches = 0 in the savefig() method.
+    plt.savefig(local_file_path, dpi=80, transparent=True, pad_inches = 0, bbox_inches='tight')
+    plt.savefig(buf, pad_inches = 0, dpi=80, transparent=True, format = "jpg", bbox_inches='tight') # save to the above file object
     plt.close() ## DO NOT COMMENT. It is to avoid assertion failed error. It would shut down the server.
-    slope_data = base64.b64encode(buf.getbuffer()).decode("utf8") # encode to html elements
-    slope_fig_path = f"data:image/jpg;base64,{slope_data}"
+    encoded_slope_data = base64.b64encode(buf.getbuffer()).decode("utf8") # encode to html elements
+    slope_fig_path = f"data:image/jpg;base64,{encoded_slope_data}"
     return slope_fig_path
 
 #---------------------------- 5. Run 1st round of HC and Plot Dendrograms. ----------------------------
@@ -865,7 +948,8 @@ def get_cluster_map(grid_index_list, norm_hc_df, grids_df_lst, drivers, delta_va
     for cluster_num in arr:
         _df_ = appended_data.loc[appended_data['cluster'] == cluster_num]
         # lbl = f"{int(cluster_num)} --> {len(_df_)}"
-        lbl = f"{int(cluster_num)} ({round(_df_['area'].sum()/1000000,2)} km sq)"
+        lbl = f"{int(cluster_num)}"
+        # lbl = f"{int(cluster_num)} ({round(_df_['area'].sum()/1000000,2)} km sq)"
         regime_map.scatter(_df_['nav_lon'], _df_['nav_lat'], latlon=True,marker='.', 
                 color=clrs[count],label = lbl)
         count = count + 1
@@ -930,20 +1014,20 @@ def get_scatter_plot_slopes(driver_pairs, hc_df, clrs):
 
     return fig_path
 
-def analyse_clusters(drivers, hc_df, clrs):
-    driver_pairs = []
-    for i in range(len(drivers)):
-        for j in range(i + 1, len(drivers)):
-            driver_pairs.append((drivers[i], drivers[j]))
+# def analyse_clusters(drivers, hc_df, clrs):
+#     driver_pairs = []
+#     for i in range(len(drivers)):
+#         for j in range(i + 1, len(drivers)):
+#             driver_pairs.append((drivers[i], drivers[j]))
     
-    ## Scatter plots
-    fig_path = get_scatter_plot_slopes(driver_pairs, hc_df, clrs)
+#     ## Scatter plots
+#     fig_path = get_scatter_plot_slopes(driver_pairs, hc_df, clrs)
 
-    ## Summary Table
+#     ## Summary Table
 
-    ## Random Forest
+#     ## Random Forest
     
-    return fig_path
+#     return fig_path
 
 def analyse_clusters_(drivers, hc_df):
 
@@ -955,9 +1039,85 @@ def analyse_clusters_(drivers, hc_df):
         for j in range(i + 1, len(drivers)):
             driver_pairs.append((drivers[i], drivers[j]))
     
+    sorted_df = hc_df.sort_values(by=['cluster'], ascending=True)
+    
+    sorted_df["cluster"] = sorted_df["cluster"].astype(str)
+    
     for dp in driver_pairs:
-        fig = px.scatter(hc_df, x=f'slope_{dp[1]}', y=f'slope_{dp[0]}', color="cluster", hover_data=['cluster'])
+        fig = px.scatter(hc_df, x=f'slope_{dp[1]}', y=f'slope_{dp[0]}', color="cluster", hover_data=['cluster'],
+        color_discrete_sequence=px.colors.qualitative.Dark24)
+
+        # fig = px.scatter(hc_df, x=f'slope_{dp[1]}', y=f'slope_{dp[0]}', color="cluster", hover_data=['cluster'],
+        # color_discrete_sequence=clrs)
+
         fig.update_layout(title = f'slope_{dp[0]} vs slope_{dp[1]}')
         list_of_figures.append(fig)
 
     return list_of_figures
+
+def get_random_forest_graphs(regimes_df, drivers, target, month, year):
+
+    regimes_df['cluster'] = regimes_df['cluster'].astype(int).astype(str)
+    cluster_lbls = np.sort(regimes_df['cluster'].unique())
+
+    data_list = []
+
+    X = regimes_df[drivers]
+    y = regimes_df[target]
+
+    for cl in cluster_lbls:
+        _df_ = regimes_df.loc[regimes_df['cluster'] == cl]
+        X = _df_[drivers]
+        y = _df_[target]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+        rf = RandomForestRegressor(n_estimators=150)
+        rf.fit(X_train, y_train)
+        feat_imp = rf.feature_importances_
+        feat_imp.insert(0, cl)
+        data_list.append(feat_imp)
+        # data_list.append([cl, rf.feature_importances_[0], rf.feature_importances_[1], rf.feature_importances_[2]])
+
+    column_names = drivers
+    column_names.insert(0, f'Cluster# in {month}, {year}')
+    feature_importance_df = pd.DataFrame(columns=column_names, data=data_list)
+
+    rf_fig = px.bar(feature_importance_df, x=column_names[0], y=drivers, title="Driver significance in individual regimes")
+    return rf_fig
+
+def get_cluster_summary_details(final_data, drivers):
+    col_names = ['Cluster Label', 'Area (sq. Km)', 'Driver' ,'Mean Regression coeffcient', 'Median Regression coeffcient', 'Standard Deviation Regression coeffcient']
+    cluster_lbls = np.sort(final_data['cluster'].unique())
+    rows_lst = []
+    # area_lst = []
+    print("--> Collecting cluster summeries.")
+    for cl in cluster_lbls:
+        # get the dataframe
+        _df_ = final_data.loc[final_data['cluster'] == cl]
+        # calculate area for each cluster
+        # lbl = f"{int(cluster_num)} ({round(_df_['area'].sum()/1000000,2)} km sq)"
+        area_sq_km = round(_df_['area'].sum()/1000000,2)
+        # print("test-area:", area_sq_km)
+        # area_lst.append(area_sq_km)
+         #1st element is cluster number.
+        for d in drivers:
+            one_row  = []
+            mean_ = _df_[f'slope_{d}'].mean()
+            med_ = _df_[f'slope_{d}'].median()
+            std_ = _df_[f'slope_{d}'].std()
+            # Next elements are slope summaries
+            one_row.append(cl) #1. element is cluster number.
+            one_row.append(area_sq_km) # 2. Area
+            one_row.append(d) # 3. driver
+            one_row.append(mean_) # 4. mean
+            one_row.append(med_) # 5. median
+            one_row.append(std_) # 6. std deviation
+            rows_lst.append(one_row)  
+    
+    # col_names = ['Cluster_labels']
+    # for d in drivers:
+    #     col_names.append(f"Mean slope_{d}")
+    #     col_names.append(f"Median slope_{d}")
+    #     col_names.append(f"Std. Dev slope_{d}")
+    
+    summary_table = pd.DataFrame(rows_lst, columns =col_names)
+    return summary_table
