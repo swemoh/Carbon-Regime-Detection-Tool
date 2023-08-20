@@ -7,7 +7,4 @@
 *.jpg
 *.pkl
 *-checkpoint.ipynb
-
-demo/data/*.pkl
-demo/tmp/*.jpg
-orca*
+*.jpeg

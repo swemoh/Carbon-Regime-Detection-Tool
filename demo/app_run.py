@@ -12,6 +12,7 @@ matplotlib.use('Agg') ## Adding to avoid assertion failed error. It would shut d
 import matplotlib.pyplot as plt
 import colorcet as cc
 import json
+import time
 
 # from lenspy import DynamicPlot
 
@@ -609,7 +610,16 @@ app.layout = html.Div([
     html.Br(),
     html.Div(children=[
         html.H3('B. Explore Non-linear target-driver relationships in the detected carbon regimes.'),
+
+        html.Div(className="row", children=[
+        dcc.Input(
+            id="input_decision_tree_nums", type="number", placeholder="Enter No. of Decision Trees",
+            min=1, max=200, step=1, debounce=True, style={'margin':'10px', 'width':'20%'}
+        ),
         html.Button("Run Random Forest.", id="btn_run_random_forest", style= green_button_style),
+        ],
+        style=dict(display='flex')),
+
         dcc.Loading(
             id = 'loading-random-forest',
             type='circle',
@@ -712,6 +722,8 @@ def load_regression(input_select_year, input_select_month, checkboxes_driver, sl
                    input_select_year_2, input_select_month_2, checkboxes_driver_2, slider_2, checkboxes_target_2,
                    btn_regression):
      if ctx.triggered_id == 'btn_regression':
+
+        start_time = time.time()
 
         global drivers
         global target
@@ -837,6 +849,7 @@ def load_regression(input_select_year, input_select_month, checkboxes_driver, sl
             fig_paths.append(plot_path)
         
         print("--> Finished plotting.")
+        print("--- %s seconds ---" % (time.time() - start_time))
 
         # https://stackoverflow.com/questions/71642795/browser-is-crashing-when-using-dropdown-component-with-large-data-in-plotly-dash/71692056#71692056 
         # https://lenspy.readthedocs.io/en/latest/quickstart.html#using-with-ploty-dash-applications
@@ -1101,12 +1114,12 @@ def load_cluster_details(btn_get_cluster_details):
     else:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-@app.callback([Output('rf_fig', 'figure'), Output('rf_fig_2', 'figure')],[Input('btn_run_random_forest','n_clicks')])
-def load_random_forest_output(btn_run_random_forest):
+@app.callback([Output('rf_fig', 'figure'), Output('rf_fig_2', 'figure')],[Input('input_decision_tree_nums','value'),Input('btn_run_random_forest','n_clicks')])
+def load_random_forest_output(input_decision_tree_nums,btn_run_random_forest):
     if ctx.triggered_id == 'btn_run_random_forest':
         print("--> Random forest is running.")
-        rf = get_random_forest_graphs(final_data, drivers, target, month, year)
-        rf_2 = get_random_forest_graphs(final_data_2, drivers_2, target_2, month_2, year_2)
+        rf = get_random_forest_graphs(final_data, drivers, target, month, year, input_decision_tree_nums)
+        rf_2 = get_random_forest_graphs(final_data_2, drivers_2, target_2, month_2, year_2, input_decision_tree_nums)
         print("--> Feature importance has been calculated.")
         return rf, rf_2
     else:

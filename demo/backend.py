@@ -30,6 +30,7 @@ import seaborn as sns
 
 import warnings
 warnings.simplefilter('ignore')
+import time
 
 from sklearn.preprocessing import minmax_scale
 from sklearn.preprocessing import StandardScaler
@@ -1055,7 +1056,7 @@ def analyse_clusters_(drivers, hc_df):
 
     return list_of_figures
 
-def get_random_forest_graphs(regimes_df, drivers, target, month, year):
+def get_random_forest_graphs(regimes_df, drivers, target, month, year, decison_tree_no = 150):
 
     regimes_df['cluster'] = regimes_df['cluster'].astype(int).astype(str)
     cluster_lbls = np.sort(regimes_df['cluster'].unique())
@@ -1070,7 +1071,7 @@ def get_random_forest_graphs(regimes_df, drivers, target, month, year):
         X = _df_[drivers]
         y = _df_[target]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
-        rf = RandomForestRegressor(n_estimators=150)
+        rf = RandomForestRegressor(n_estimators=decison_tree_no)
         rf.fit(X_train, y_train)
         feat_imp = rf.feature_importances_
         feat_imp.insert(0, cl)
