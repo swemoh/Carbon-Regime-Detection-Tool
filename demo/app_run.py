@@ -137,8 +137,8 @@ app.layout = html.Div([
     html.Hr(),
     # html.Br(),
     # html.P("Demo Introduction. A paragraph about the tool."),
-    html.H2("Step 1: Select ocean model, required year and month. Step 2: Select required drivers of CO2.",),
-    html.H2("Step 2: Press the button at the bottom to start grid-based multivariate linear regression between CO2 and its drivers."),
+    html.H2("Step 1: Select ocean model, required year and month. Select drivers of CO2. And choose your target.",),
+    html.H2("Click the button at the bottom to start grid-based multivariate linear regression between CO2 and its drivers."),
 
     html.Div(className="row", children=[
             dcc.Dropdown(id="input_select_ocean_model",
@@ -183,9 +183,9 @@ app.layout = html.Div([
                 options=[
                     {'label': 'Sea Surface Temperature', 'value': 'SST'},
                     {'label': 'Dissolved Inorganic Carbon', 'value': 'DICP'},
-                    {'label': 'Salinity', 'value': 'SAL'},
                     {'label': 'Alkalinity', 'value': 'ALK'},
-                    {'label': 'Sea Ice Coverege', 'value': 'ICE'},
+                    {'label': 'Salinity (Coming Soon!)', 'value': 'SAL'},
+                    {'label': 'Sea Ice Coverege (Coming Soon!)', 'value': 'ICE'},
                 ],
                 # value=['sst'],  # Set the default selected values
                 labelStyle={'display': 'block'},  # Display each label in a new line
@@ -264,9 +264,9 @@ app.layout = html.Div([
                 options=[
                     {'label': 'Sea Surface Temperature', 'value': 'SST'},
                     {'label': 'Dissolved Inorganic Carbon', 'value': 'DICP'},
-                    {'label': 'Salinity', 'value': 'SAL'},
                     {'label': 'Alkalinity', 'value': 'ALK'},
-                    {'label': 'Sea Ice Coverege', 'value': 'ICE'},
+                    {'label': 'Salinity (Coming Soon!)', 'value': 'SAL'},
+                    {'label': 'Sea Ice Coverege (Coming Soon!)', 'value': 'ICE'},
                 ],
                 # value=['sst'],  # Set the default selected values
                 labelStyle={'display': 'block'},  # Display each label in a new line
@@ -304,7 +304,7 @@ app.layout = html.Div([
     ], style=dict(display='flex')),
 
     html.Br(),
-
+    html.H2("Regression output from Model 1."),
     html.Div(id='regression_output_container_1', children=[
         dcc.Loading(
             id="reg1_driver1_slopes_loading",
@@ -332,6 +332,7 @@ app.layout = html.Div([
     ], style={'text-align':'center'}),
 
     html.Br(),
+    html.H2("Regression output from Model 2."),
 
     html.Div(id='regression_output_container_2', children=[
         dcc.Loading(
@@ -361,7 +362,7 @@ app.layout = html.Div([
 
     html.Br(),
 
-    html.H2("Run the hierarchical clustering to group the grid boxes."),
+    html.H2("Step 2: Run the hierarchical clustering to group the grid boxes."),
 
     html.Div(id='clustering_button_container', children=[
         html.Button('Run hierarchical clustering.', id='btn_hc', style= green_button_style),
@@ -384,7 +385,7 @@ app.layout = html.Div([
 
     html.Br(),
 
-    html.H2("Get BIC scores and cluster numbers for different possible pairs of delta_var and delta_dist."),
+    html.H2("Step 3: Get BIC scores and cluster numbers for different possible pairs of delta_var and delta_dist."),
 
     html.Div(id='bic_button_container', children=[
         html.Button('Plot graphs.', id='btn_bic', style= green_button_style),
@@ -410,6 +411,8 @@ app.layout = html.Div([
     style={'text-align':'center' , 'color':'gray'}),
     html.Br(),
 
+    
+    html.H2("Step 4: Distance Variance Selection",),
     html.H2("Set the threshold parameters for change in distance (delta_dist) and change in variance (delta_var) for the first dendrogram.",),
     html.H2("Select desired values of thresholds from the list and then press the button at the right to begin the cluster selection procedure.",),
     html.Div(className="row", children=[
@@ -563,27 +566,30 @@ app.layout = html.Div([
 
     html.Br(),
 
-    html.H2(" Step 3: Collect the clustering labels and study the output.",),
+    html.H2(" Step 5: Collect the clustering labels.",),
     html.Button("Extract clustering labels.", id="btn_get_cluster_maps", style= green_button_style),
     html.Br(),
     html.Div(children=[
          html.H3('Detected ocean carbon regimes are shown below on the map.'),
+         html.H3('Model 1:'),
          dcc.Loading(id="loading-cluster-map",
                     type="circle",
                     children=[
-                    html.Img(id='cluster_map_image', src = '', style={'height':'450px', 'width':'60%',}),
+                    html.Img(id='cluster_map_image', src = '', style={'height':'450px', 'width':'60%','align':'center'}),
                     # dcc.Graph(id='cluster_map_graph', style={'height':'1200px', 'width':'100%','align':'center'}),
                     ]),
+        html.Br(),
+        html.H3('Model 2:'),
         dcc.Loading(id="loading-cluster-map_2",
                     type="circle",
                     children=[
-                    html.Img(id='cluster_map_image_2', src = '', style={'height':'450px', 'width':'80%',}),
+                    html.Img(id='cluster_map_image_2', src = '', style={'height':'450px', 'width':'60%','align':'center'}),
                     # dcc.Graph(id='cluster_map_graph', style={'height':'1200px', 'width':'100%','align':'center'}),
                     ]),
 
      ],  style={'text-align':'center'}),
     html.Br(),
-    html.H2(" Step 4: Study the output.",),
+    html.H2(" Step 6: Analyse the output.",),
     html.Button("Analyse Clusters.", id="btn_get_cluster_details", style= green_button_style),
 
     html.Div(children=[
@@ -665,7 +671,7 @@ app.layout = html.Div([
             ]),
         html.Br(),                 
     ]),
-    html.H2(" Step 5: Download the output.",),
+    html.H2(" Step 7: Download the output.",),
     # html.H4("Here is the clustering output in a tabular format. You can only see random 20 rows. To access the complete data with more than 200,000 datapoints, click on the download button below.",
     #                         style={'color':'blue'}),
     # dcc.Loading(id="loading-datatable-upload",type="circle",
@@ -890,6 +896,7 @@ def load_regression(input_select_year, input_select_month, checkboxes_driver, sl
 # the order of parameter follows the order of input for callback.
 def load_dendrograms(btn_hc):
     if ctx.triggered_id == 'btn_hc':
+        start_time = time.time()
         print("Fetching Dendrograms.")
 
         global linkage_matrix
@@ -952,6 +959,8 @@ def load_dendrograms(btn_hc):
         file_name = f'Dendrogram_{year}_{month}_2'
         norm_hc_df_2, linkage_matrix_2, dend_fig_path_2 = run_hc(hc_df_2, drivers_2, file_name)
 
+        print("--- %s seconds ---" % (time.time() - start_time))
+
         return dend_fig_path, dend_fig_path_2
 
     else:
@@ -964,6 +973,7 @@ def load_dendrograms(btn_hc):
 # the order of parameter follows the order of input for callback.
 def load_bic(btn_bic):
     if ctx.triggered_id == 'btn_bic':
+        start_time = time.time()
         print("Building BIC Graph for 1st model.")
         global dendro_dict_lst
         global dendro_dict_lst_2
@@ -971,6 +981,8 @@ def load_bic(btn_bic):
         
         print("Building BIC Graph for 2nd model.")
         dendro_dict_lst_2, bic_cluster_num_fig_2 = plot_bic_score_cluster_no(Z = linkage_matrix_2, norm_hc_df = norm_hc_df_2, year = year_2, month = month_2)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        
         return bic_cluster_num_fig, bic_cluster_num_fig_2
 
     else:
@@ -994,12 +1006,14 @@ def cut_dendrogram(input_select_delta_variance, input_select_delta_height,btn_de
     global del_dist
 
     if ctx.triggered_id == 'btn_dendro':
+        start_time = time.time()
         print(f'---> Button pressed = {ctx.triggered_id}')
         print(f'---> Delta Variance = {input_select_delta_variance}')
         print(f'---> Delta Distance = {input_select_delta_height}')
         del_var = input_select_delta_variance
         del_dist = input_select_delta_height
     elif ctx.triggered_id == 'btn_manual_dendro':
+        start_time = time.time()
         print(f'---> Button pressed = {ctx.triggered_id}')
         print(f'---> Delta Variance = {input_range_var}')
         print(f'---> Delta Distance = {input_range_dist}')
@@ -1010,6 +1024,7 @@ def cut_dendrogram(input_select_delta_variance, input_select_delta_height,btn_de
         return dash.no_update
 
     grid_index_list, clustered_dendro_fig_path = detect_clusters_on_dendrogram(norm_hc_df, del_var, del_dist, dendro_dict_lst)
+    print("--- %s seconds ---" % (time.time() - start_time))
     return clustered_dendro_fig_path
 
 @app.callback(Output('dendro_cut_2', 'src'),
@@ -1028,12 +1043,14 @@ def cut_dendrogram_2(input_select_delta_variance_2, input_select_delta_height_2,
     global del_dist_2
 
     if ctx.triggered_id == 'btn_dendro_2':
+        start_time = time.time()
         print(f'---> Button pressed = {ctx.triggered_id}')
         print(f'---> Delta Variance = {input_select_delta_variance_2}')
         print(f'---> Delta Distance = {input_select_delta_height_2}')
         del_var_2 = input_select_delta_variance_2
         del_dist_2 = input_select_delta_height_2
     elif ctx.triggered_id == 'btn_manual_dendro_2':
+        start_time = time.time()
         print(f'---> Button pressed = {ctx.triggered_id}')
         print(f'---> Delta Variance = {input_range_var_2}')
         print(f'---> Delta Distance = {input_range_dist_2}')
@@ -1044,7 +1061,7 @@ def cut_dendrogram_2(input_select_delta_variance_2, input_select_delta_height_2,
         return dash.no_update
 
     grid_index_list_2, clustered_dendro_fig_path_2 = detect_clusters_on_dendrogram(norm_hc_df_2, del_var_2, del_dist_2, dendro_dict_lst_2)
-
+    print("--- %s seconds ---" % (time.time() - start_time))
     return clustered_dendro_fig_path_2
 
 
@@ -1055,6 +1072,8 @@ def cut_dendrogram_2(input_select_delta_variance_2, input_select_delta_height_2,
 # the order of parameter follows the order of input for callback.
 def load_cluster_maps(btn_get_cluster_maps):
     if ctx.triggered_id == 'btn_get_cluster_maps':
+        start_time = time.time()
+
         global final_data
         global final_data_2
         global cluster_colors
@@ -1069,6 +1088,7 @@ def load_cluster_maps(btn_get_cluster_maps):
         hc_df_2, cluster_colors_2, final_data_2, cluster_map_path_2 = get_cluster_map(grid_index_list_2, norm_hc_df_2, grids_df_lst_2, drivers_2, del_var_2, del_dist_2, year_2, month_2)
         
         print("--> Cluster maps are generated.")
+        print("--- %s seconds ---" % (time.time() - start_time))
 
         return cluster_map_path, cluster_map_path_2
 
@@ -1104,10 +1124,13 @@ def load_cluster_maps(btn_get_cluster_maps):
 # the order of parameter follows the order of input for callback.
 def load_cluster_details(btn_get_cluster_details):
     if ctx.triggered_id == 'btn_get_cluster_details':
+        start_time = time.time()
         print("--> Scatter plots among slopes are being prepared.")
         distribution_fig_path = analyse_clusters_(drivers, hc_df)
         distribution_fig_path_2 = analyse_clusters_(drivers_2, hc_df_2)
         print("--> Scatter plots are generated.")
+
+        print("--- %s seconds ---" % (time.time() - start_time))
 
         return distribution_fig_path[0], distribution_fig_path[1], distribution_fig_path[2], distribution_fig_path_2[0], distribution_fig_path_2[1], distribution_fig_path_2[2]
 
@@ -1117,10 +1140,14 @@ def load_cluster_details(btn_get_cluster_details):
 @app.callback([Output('rf_fig', 'figure'), Output('rf_fig_2', 'figure')],[Input('input_decision_tree_nums','value'),Input('btn_run_random_forest','n_clicks')])
 def load_random_forest_output(input_decision_tree_nums,btn_run_random_forest):
     if ctx.triggered_id == 'btn_run_random_forest':
+        start_time = time.time()
         print("--> Random forest is running.")
         rf = get_random_forest_graphs(final_data, drivers, target, month, year, input_decision_tree_nums)
         rf_2 = get_random_forest_graphs(final_data_2, drivers_2, target_2, month_2, year_2, input_decision_tree_nums)
+        
         print("--> Feature importance has been calculated.")
+        print("--- %s seconds ---" % (time.time() - start_time))
+
         return rf, rf_2
     else:
         return dash.no_update, dash.no_update
@@ -1129,6 +1156,7 @@ def load_random_forest_output(input_decision_tree_nums,btn_run_random_forest):
 [Input('btn_show_cluster_summary','n_clicks')])
 def load_model_summary(btn_show_cluster_summary):
     if ctx.triggered_id == 'btn_show_cluster_summary':
+        start_time = time.time()
         detail_df = get_cluster_summary_details(final_data, drivers)
         detail_df = detail_df.round(2)
 
@@ -1136,6 +1164,7 @@ def load_model_summary(btn_show_cluster_summary):
         detail_df_2 = detail_df_2.round(2)
 
         print("--> Tables are ready!")
+        print("--- %s seconds ---" % (time.time() - start_time))
         return detail_df.to_dict('records'), detail_df_2.to_dict('records')
     else:
         return dash.no_update, dash.no_update
@@ -1148,9 +1177,10 @@ def load_model_summary(btn_show_cluster_summary):
     prevent_initial_call=True,
 )
 def download_clustered_data(n_clicks):
+    start_time = time.time()
     print('---> Downloading the data in CSV files.')
+    print("--- %s seconds ---" % (time.time() - start_time))
     return dcc.send_data_frame(final_data.to_csv, f"model_1_{str(datetime.datetime.now)}.csv"), dcc.send_data_frame(final_data_2.to_csv, f"model_2_{str(datetime.datetime.now)}.csv")
-
 
 
 # ------------------------------- *************** ------------------------------------

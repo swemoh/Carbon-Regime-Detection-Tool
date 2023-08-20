@@ -922,7 +922,7 @@ def get_cluster_map(grid_index_list, norm_hc_df, grids_df_lst, drivers, delta_va
     appended_data = pd.concat(appended_data)
 
 
-    fig = plt.figure(figsize=(20, 16), edgecolor='w')
+    plt.figure(figsize=(12, 8), edgecolor='w')
     plt.title(f'Carbon regimes of {year}, {month} with BIC Score = {BIC}, parameters = {delta_dist} and {delta_var}',fontsize=20)
     plt.xlabel('Longitude', fontsize=20, labelpad=40)
     plt.ylabel('Latitude', fontsize=20, labelpad=40)
@@ -965,8 +965,8 @@ def get_cluster_map(grid_index_list, norm_hc_df, grids_df_lst, drivers, delta_va
 
 
     local_file_path = f'tmp/cluster_map_{delta_dist}_{delta_var}_{year}_{month}.jpg'
-    plt.savefig(local_file_path) # save locally
-    plt.savefig(buf, format = "jpg") # save to the above file object (Runtime memory)
+    plt.savefig(local_file_path, bbox_inches='tight', pad_inches = 0, dpi=80, transparent=True,) # save locally
+    plt.savefig(buf, format = "jpg", bbox_inches='tight', pad_inches = 0, dpi=80, transparent=True,) # save to the above file object (Runtime memory)
     plt.close() ## DO NOT COMMENT. It is to avoid assertion failed error. It would shut down the server.
     map_data = base64.b64encode(buf.getbuffer()).decode("utf8") # encode to html elements
     map_fig_path = f"data:image/jpg;base64,{map_data}"
@@ -1074,6 +1074,10 @@ def get_random_forest_graphs(regimes_df, drivers, target, month, year, decison_t
         rf = RandomForestRegressor(n_estimators=decison_tree_no)
         rf.fit(X_train, y_train)
         feat_imp = rf.feature_importances_
+        feat_imp = feat_imp.tolist()
+        # print("Feature importance: ", feat_imp)
+
+        # add cluster label at 0th index
         feat_imp.insert(0, cl)
         data_list.append(feat_imp)
         # data_list.append([cl, rf.feature_importances_[0], rf.feature_importances_[1], rf.feature_importances_[2]])
