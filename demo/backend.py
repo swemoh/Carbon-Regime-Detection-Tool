@@ -923,7 +923,8 @@ def get_cluster_map(grid_index_list, norm_hc_df, grids_df_lst, drivers, delta_va
 
 
     plt.figure(figsize=(12, 8), edgecolor='w')
-    plt.title(f'Carbon regimes of {year}, {month} with BIC Score = {BIC}, parameters = {delta_dist} and {delta_var}',fontsize=20)
+    # plt.title(f'Carbon regimes of {year}, {month} with BIC Score = {BIC}, parameters = {delta_dist} and {delta_var}',fontsize=20)
+    plt.title(f'BIC Score = {round(BIC,2)}, parameters = {delta_dist} and {delta_var}',fontsize=12)
     plt.xlabel('Longitude', fontsize=20, labelpad=40)
     plt.ylabel('Latitude', fontsize=20, labelpad=40)
 
@@ -959,7 +960,7 @@ def get_cluster_map(grid_index_list, norm_hc_df, grids_df_lst, drivers, delta_va
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     # plt.legend(by_label.values(), by_label.keys())
-    lgnd = plt.legend(by_label.values(), by_label.keys(),loc='best', ncol=1, fontsize=20,bbox_to_anchor=(1.0, 0.8))
+    lgnd = plt.legend(by_label.values(), by_label.keys(),loc='best', ncol=1, fontsize=10,bbox_to_anchor=(1.0, 0.8))
     for handle in lgnd.legendHandles:
         handle.set_linewidth(15)
 
