@@ -16,5 +16,5 @@ Update the requirements.txt file if you install additional packages: \
 `python app_run.py`
 
 ## Data
-Preprocessed ocean carbon data can be found here: hdl.handle.net/20.500.12085/b520400a-6629-436f-9041-fe3c47308409/ 
+Preprocessed ocean carbon data can be found here: hdl.handle.net/20.500.12085/b520400a-6629-436f-9041-fe3c47308409/ (Copy and paste this link in your browser.)  
 For more details drop an email to smohanty@geomar.de. 
