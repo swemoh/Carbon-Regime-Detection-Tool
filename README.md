@@ -13,7 +13,8 @@ Update the requirements.txt file if you install additional packages: \
 
 ## Demo
 `cd demo` \
-`python app_dash.py`
+`python app_run.py`
 
 ## Data
-Ocean data will be provided upon request. Please drop an email to smohanty@geomar.de. 
+Preprocessed ocean carbon data can be found here: hdl.handle.net/20.500.12085/b520400a-6629-436f-9041-fe3c47308409/ 
+For more details drop an email to smohanty@geomar.de. 
